@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import RayaDebajoWifi from './RayaDebajoWifi';
@@ -18,6 +18,8 @@ import { Icon } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Auth({ navigation }) {
+
+
 
   //confoguracion del cliente google para acceder mediante Login de google
   useEffect(() => {
@@ -49,46 +51,50 @@ export default function Auth({ navigation }) {
 
   const [hidePassword, setHidePassword] = useState(false)
 
+  //esto es para abrir una Pantalla Modal con los dispositivos bt
+  
+
   return (
+
     <>
-      <ScrollView>
-        <View style={styles.view}>
 
 
-          <Image style={{ height: 200 }} source={require("../assets/LogoVerde.png")} ></Image>
+      <View style={styles.view}>
 
 
-
-          <Text style={styles.TextIniciarSesion}>Iniciar Sesion</Text>
-          <RayaDebajoWifi></RayaDebajoWifi>
+        <Image style={{ height: "17%", width: "12%" }} source={require("../assets/LogoVerde.png")} ></Image>
 
 
-          <View style={styles.viewIniciarSesion}>
+        <Text style={styles.TextIniciarSesion}>Iniciar Sesión</Text>
+        <RayaDebajoWifi></RayaDebajoWifi>
 
-            <MyTextInput keyboardType='email-address' placeholder='E-mail' image='user'></MyTextInput>
-            <MyTextInput keyboardType={null} placeholder='Contraseña' image='lock' bolGone={true} secureTextEntry={hidePassword} onPress={() => setHidePassword(!hidePassword)} ></MyTextInput>
 
-            <View style={loginStyles.btnMain}>
-              <TouchableOpacity>
-                <Text style={loginStyles.btntxt}>Iniciar Sesión</Text>
-              </TouchableOpacity>
+        <View style={styles.viewIniciarSesion}>
 
-            </View>
-            <View style={loginStyles.btnTransparent}>
+          <MyTextInput keyboardType='email-address' placeholder='E-mail' image='user'></MyTextInput>
+          <MyTextInput keyboardType={null} placeholder='Contraseña' image='lock' bolGone={true} secureTextEntry={hidePassword} onPress={() => setHidePassword(!hidePassword)} ></MyTextInput>
 
-              <TouchableOpacity onPress={() => navigation.navigate('RegistroScreen')}>
-                <Text style={[loginStyles.btntxt, { color: colors2.BLUE }]}>Registrarse</Text>
-              </TouchableOpacity>
+          <View style={loginStyles.btnMain}>
+            <TouchableOpacity>
+              <Text style={loginStyles.btntxt}>Iniciar Sesión</Text>
+            </TouchableOpacity>
 
-            </View>
-            <View style={[loginStyles.btnTransparent, { backgroundColor: '#4081EC' }, {marginBottom:"30%"}]}>
+          </View>
+          <View style={loginStyles.btnTransparent}>
 
-              <TouchableOpacity onPress={signIn}>
-                <Text style={[loginStyles.btntxt, { color: colors.PRIMARY_COLOR_DARK, color: colors.PRIMARY_COLOR, fontWeight: "bold", fontSize: 18 }]}><FontAwesome5 style={{ color: colors.PRIMARY_COLOR, fontSize: 30, fontWeight: "bold", fontSize: 25 }} name={'google'}></FontAwesome5>   Iniciar con Google</Text>
-              </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('RegistroScreen')}>
+              <Text style={[loginStyles.btntxt, { color: colors2.BLUE }]}>Registrarse</Text>
+            </TouchableOpacity>
 
-            </View>
-            {/*  <View>
+          </View>
+          <View style={[loginStyles.btnTransparent, { backgroundColor: '#4081EC' }, { marginBottom: "30%" }, { height: "11%" }]}>
+
+            <TouchableOpacity onPress={signIn}>
+              <Text style={[loginStyles.btntxt, { color: colors.PRIMARY_COLOR_DARK, color: colors.PRIMARY_COLOR, fontWeight: "bold", fontSize: 20 }]}><FontAwesome5 style={{ color: colors.PRIMARY_COLOR, fontWeight: "bold", fontSize: 16 }} name={'google'}></FontAwesome5>   Iniciar con Google</Text>
+            </TouchableOpacity>
+
+          </View>
+          {/*  <View>
 
             <TouchableOpacity onPress={() => navigation.navigate('RecuperarPassword')}>
               <Text style={[loginStyles.txtTransparent, { textDecorationLine: 'underline' }]}>Olvide mi Contraseña</Text>
@@ -96,29 +102,21 @@ export default function Auth({ navigation }) {
 
           </View> */}
 
-          </View>
-
-
-
-
-
-
-
-
-
         </View>
 
-      </ScrollView>
+      </View>
+
+
 
       <View style={styles.footerAñadirBlueAndMiCuenta}>
 
         <View >
-          <TouchableOpacity onPress={() => navigation.navigate('AccesoRapido')}>
+          <TouchableOpacity onPress={() => {navigation.navigate('AccesoRapido')}}>
             <FontAwesome5 style={styles.iconConexion} name={'wifi'}></FontAwesome5>
           </TouchableOpacity>
         </View>
         <View >
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity onPress={() =>  navigation.navigate('Login') }>
             <FontAwesome5 style={styles.iconUser} name={'user'}></FontAwesome5>
           </TouchableOpacity>
         </View>
@@ -126,6 +124,7 @@ export default function Auth({ navigation }) {
 
 
       </View>
+
     </>
 
 
@@ -135,20 +134,16 @@ export default function Auth({ navigation }) {
 
 const styles = StyleSheet.create({
   view: {
-    flex: 1,
+    marginTop: "1%",
     alignItems: 'center',
-    backgroundColor: colors.PRIMARY_COLOR
-  },
-
-  iconUser: {
-    fontSize: 120,
-    marginTop: 30,
-    marginBottom: 8,
-    color: colors.PRIMARY_COLOR_DARK
+    backgroundColor: colors.PRIMARY_COLOR,
+    height: "100%"
   },
   TextIniciarSesion: {
+    marginTop: "5%",
+    marginBottom: "0%",
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: 21,
     color: colors.PRIMARY_COLOR_DARK
   },
 
@@ -158,8 +153,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.PRIMARY_COLOR,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    paddingLeft: 40,
-    paddingRight: 40
+    paddingLeft: "9%",
+    paddingRight: "9%"
   },
 
   viewParaSaber: {
@@ -168,28 +163,28 @@ const styles = StyleSheet.create({
 
   footerAñadirBlueAndMiCuenta: {
     position: 'absolute',
-      bottom:0,
-      flexDirection: 'row',
-      width: '100%',
-      height:"11%",
-      justifyContent: 'space-between',
-      alignContent: 'center',
-      backgroundColor: colors.BLUE_COLOR,
-      paddingHorizontal: 30,
-      borderTopLeftRadius:30,
-      borderTopRightRadius:30
+    bottom: 0,
+    flexDirection: 'row',
+    width: '100%',
+    height: "8%",
+    justifyContent: 'space-between',
+    alignContent: 'center',
+    backgroundColor: colors.BLUE_COLOR,
+    paddingHorizontal: "6%",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30
   },
   iconConexion: {
-    marginTop: 19,
-    marginBottom: 22,
-    marginLeft: 75,
+    marginTop: "8%",
+    marginBottom: "0%",
+    marginLeft: "46%",
     color: colors.PRIMARY_COLOR,
     fontSize: 20
   },
   iconUser: {
-    marginTop: 19,
-    marginBottom: 22,
-    marginRight: 75,
+    marginTop: "14%",
+    marginBottom: "0%",
+    marginRight: "25%",
     color: colors.VERDE_SABROSO,
     fontSize: 20
 

@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
         borderBottomWidth:1,
         marginLeft: 5,
         flex:1,
-        marginTop:3,
+        marginTop:"1%",
         borderColor: '#eceff1'
 
     }

@@ -9,10 +9,12 @@ import RegistroScreen from "../src/components/RegistroScreen";
 import SplashScreen from "../src/components/SplashScreen";
 import Home from "../src/components/Home";
 import { useState } from "react";
+import useBLE from "../useBLE";
 const Stack = createNativeStackNavigator()
 
 const MainStack = () => {
 
+   
 
     return (
         <NavigationContainer>

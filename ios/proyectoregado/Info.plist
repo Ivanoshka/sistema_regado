@@ -51,5 +51,10 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>App would like to use your bluetooth for communication purposes</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>App would like to use your bluetooth for communication purposes</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
 </dict>
 </plist>

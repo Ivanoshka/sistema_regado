@@ -1,16 +1,52 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet, ScrollView } from 'react-native'
-import { Slider, Text, CheckBox } from "react-native-elements";
+import { View, TouchableOpacity, SafeAreaView, StatusBar, StyleSheet, ScrollView, FlatList } from 'react-native'
+import { Text, CheckBox } from "react-native-elements";
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import colors from '../utils/colors';
 import RayaDebajoWifi from "./RayaDebajoWifi";
 import { Picker } from '@react-native-picker/picker';
 import colors2 from "../utils/colors2";
 import Toast from 'react-native-toast-message';
+import RNPermissions from 'react-native-permissions';
+import { Platform, PermissionsAndroid } from 'react-native';
+
+import BluetoothSerial from 'react-native-bluetooth-serial-next';
+import { async } from "@firebase/util";
 
 
 const Home = ({ }) => {
+
+  const [lista, setLista] = useState([]);
+  const [bolEnable, setBolEnable] = useState(false);
+
+  /*   const renderEmpty = () => <Empty text="No hay dispositivos"></Empty> 
+    const renderItem = ({item}) => {
+      return <Device {...item} ></Device>
+    } */
+
+  useEffect(() => {
+
+    async function init() {
+      const enable = await BluetoothSerial.requestEnable(); /* pide permiso de encender bluetooth */
+      const lista = await BluetoothSerial.list(); /* muestra la lista de los dispositivos */
+
+      console.log(lista)
+    }
+
+    init();
+
+    return () => {
+      async function remove() {
+        await BluetoothSerial.cancelDiscovery();
+        await BluetoothSerial.stopScanning();
+        console.log('Termino scanner');
+      }
+
+      remove();
+    }
+  }, []);
+
   useEffect(() => {
     getData();
 
@@ -29,6 +65,46 @@ const Home = ({ }) => {
     console.log(pass);
 
   }
+  //funcion que manda parametro por bluetooth
+  const btnOn = async () => {
+
+    try {
+      const devices = await BluetoothSerial.list();
+      const device = devices.find(device => device.name === "SuperHombre");
+
+      // Conectar al dispositivo Bluetooth
+      await BluetoothSerial.connect(device.address);
+
+      // Enviar datos a través de la conexión Bluetooth
+      await BluetoothSerial.write("A");
+      await BluetoothSerial.device(device.id).disconnect();
+      console.log('Prendido')
+
+    } catch (error) {
+      console.log(error);
+    }
+
+  }
+
+  const btnOFF = async () => {
+
+    try {
+      const devices = await BluetoothSerial.list();
+      const device = devices.find(device => device.name === "SuperHombre");
+
+      // Conectar al dispositivo Bluetooth
+      await BluetoothSerial.connect(device.address);
+
+      // Enviar datos a través de la conexión Bluetooth
+      await BluetoothSerial.write("O");
+      await BluetoothSerial.device(device.id).disconnect();
+      console.log('Apagado')
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
 
   //esto es para el Toast
   const showToast = () => {
@@ -43,7 +119,20 @@ const Home = ({ }) => {
     });
   }
 
+  //esto es para el Toast
+  const ToastErrorAgendar = (TipoDeError) => {
+    Toast.show({
+      type: "error",
+      text1: "Configuración Fallida",
+      text2: TipoDeError,
+      autoHide: true,
+      visibilityTime: 4000,
+      position: "bottom",
 
+    });
+
+
+  }
 
   /* Esto es para la seleccion de dias con los checkbox
    */
@@ -55,54 +144,136 @@ const Home = ({ }) => {
   const [sabado, setSabado] = useState(false);
   const [domingo, setDomingo] = useState(false);
 
+  /*    let hora = '';  */
+  const [hora, setHora] = useState();
+  const [minuto, setMinuto] = useState();
+  const [minutosDuracion, setMinutosDuracion] = useState();
 
-/*    let hora = '';  */
-    const [hora,setHora] = useState();
+  const EnviarSecuenciaConDia = async (dia) => {
+    await EnvioDeParametrosParaAgendaBT('A', numeroHorario);
+    await EnvioDeParametrosParaAgendaBT('D', dia);
+
+    await EnvioDeParametrosParaAgendaBT('D');
+
+    //ESTA FUNCION PROCESA LO DE HORAS QUESE ENVIA POR BLUETOOTH, NOS AHORRAMOS SWICHT
+    await EnvioDeParametrosParaAgendaBT('H', hora)
+    //ESTA FUNCION PROCESA LO DE MINUTOS QUESE ENVIA POR BLUETOOTH, NOS AHORRAMOS SWICHT
+    await EnvioDeParametrosParaAgendaBT('M', minuto)
+
+    await EnvioDeParametrosParaAgendaBT('D');
+
+    await EnvioDeParametrosParaAgendaBT('D', minutosDuracion)
+  }
 
 
+  const EnvioDeParametrosParaAgendaBT = async (primerParametro, SegundoParametro = '') => {
+    try {
 
-  const onSubmit = () => {
-    if (hora != null) {
-      showToast();
-      console.log("Hora Seleccionada=", hora, "hrs");
-      if (lunes) {
-        console.log('Seleccionaste lunes', 1);
-      } else {
-        console.log('No seleccionaste lunes', 0);
+      // Enviar datos a través de la conexión Bluetooth
+      await BluetoothSerial.write(primerParametro);
+      if (SegundoParametro.length == 2) {
+        await BluetoothSerial.write(SegundoParametro.charAt(0));
+        await BluetoothSerial.write(SegundoParametro.charAt(1));
+
+      } else if (SegundoParametro.length == 1) {
+        await BluetoothSerial.write(SegundoParametro)
+      } else if (SegundoParametro.length == 3 && primerParametro == 'D') {
+        await BluetoothSerial.write(SegundoParametro.charAt(0));
+        await BluetoothSerial.write(SegundoParametro.charAt(1));
+        await BluetoothSerial.write(SegundoParametro.charAt(2));
       }
-      if (martes) {
-        console.log('Seleccionaste martes', 1);
-      } else {
-        console.log('No seleccionaste martes', 0);
-      }
-      if (miercoles) {
-        console.log('Seleccionaste miercoles', 1);
-      } else {
-        console.log('No seleccionaste miercoles', 0);
-      }
-      if (jueves) {
-        console.log('Seleccionaste jueves', 1);
-      } else {
-        console.log('No seleccionaste jueves', 0);
-      }
-      if (viernes) {
-        console.log('Seleccionaste viernes', 1);
-      } else {
-        console.log('No seleccionaste viernes', 0);
-      }
-      if (sabado) {
-        console.log('Seleccionaste sabado', 1);
-      } else {
-        console.log('No seleccionaste sabado', 0);
-      }
-      if (martes) {
-        console.log('Seleccionaste domingo', 1);
-      } else {
-        console.log('No seleccionaste domingo', 0);
-      }
+
+    } catch (error) {
+      console.log(error);
     }
+  }
+
+  const conectarBT = async () => {
+    try {
+      const devices = await BluetoothSerial.list();
+      const device = devices.find(device => device.name === "SuperHombre");
+
+      // Conectar al dispositivo Bluetooth
+      await BluetoothSerial.connect(device.address);
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const DesconectarBT = async () => {
+    await BluetoothSerial.device(device.id).disconnect();
+  }
 
 
+
+  const onSubmit = async () => {
+    console.log("EL SISTEMA SE PRENDERA DE LA SIGUIENTE MANERA:")
+    if (numeroHorario < "1" || numeroHorario > "3") {
+      //aqui va el toast de error
+      ToastErrorAgendar("Error al configurar el numero de sesion de riego");
+      //no tiene que hacer nada
+      return;
+    }
+    if (hora < "0" || hora > "23" || hora == null) {
+      //aqui va el toast de error
+      ToastErrorAgendar("Error al configurar la hora");
+      //no tiene que hacer nada
+      return;
+    }
+    //evalua el value de minuto
+    if (minuto < "0" || minuto > "11" || minuto == null) {
+      //aqui va el toast de error
+      ToastErrorAgendar("Error al configurar el minuto");
+      //no tiene que hacer nada
+      return;
+    }
+    //Toast de error en la duracion
+    if (minutosDuracion < 5 || minutosDuracion > 120) {
+      ToastErrorAgendar("El tiempo de duracion es incorrecto");
+      return;
+    }
+    console.log("Hora Seleccionada=", hora, "hrs");
+
+    conectarBT();
+
+    if (lunes) {
+      EnviarSecuenciaConDia('L');
+    } else {
+
+    }
+    if (martes) {
+      EnviarSecuenciaConDia('M');
+    } else {
+
+    }
+    if (miercoles) {
+      EnviarSecuenciaConDia('N');
+    } else {
+
+    }
+    if (jueves) {
+      EnviarSecuenciaConDia('J');
+    } else {
+
+    }
+    if (viernes) {
+      EnviarSecuenciaConDia('V');
+    } else {
+
+    }
+    if (sabado) {
+      EnviarSecuenciaConDia('S');
+    } else {
+
+    }
+    if (domingo) {
+      EnviarSecuenciaConDia('G');
+    } else {
+
+    }
+    DesconectarBT();
+    showToast();
   }
 
 
@@ -126,7 +297,7 @@ const Home = ({ }) => {
 
       <Text style={{ padding: 18, fontSize: 12, textAlign: "center" }}> Antes de encender, asegurese que el dispostivo está conectado al sistema de riego, mediante Bluetooth </Text>
 
-      <TouchableOpacity style={{ paddingTop: 10, paddingLeft: 20, paddingRight: 20 }} onPress={console.log("Encendido")}>
+      <TouchableOpacity style={{ paddingTop: "1%", paddingLeft: "12%", paddingRight: "12%" }} onPress={btnOn}>
         <Text style={{
           fontSize: 30, textAlign: "center", width: 250,
           marginTop: 0,
@@ -139,10 +310,7 @@ const Home = ({ }) => {
         }}>ON <FontAwesome5 style={{ color: colors.VERDE_SABROSO, fontSize: 30 }} name={'power-off'}></FontAwesome5></Text>
       </TouchableOpacity>
 
-
-
-
-      <TouchableOpacity style={{ paddingLeft: 20 }} onPress={console.log("Encendido")}>
+      <TouchableOpacity style={{ paddingLeft: "12%", paddingRight: "12%" }} onPress={btnOFF}>
         <Text style={{
           fontSize: 30, textAlign: "center", backgroundColor: 'rgba(52, 52, 52, 0)',
           borderColor: colors2.BLUE,
@@ -163,15 +331,45 @@ const Home = ({ }) => {
 
 
       <View style={{}}>
-        <Text style={{ paddingLeft: 20, paddingTop: 10, fontWeight: 'bold' }}
-        >Selecciona la hora</Text>
-        <Picker style={{ fontSize: 16, paddingVertical: 12, paddingHorizontal: 10, borderWidth: 1, borderRadius: 4, color: "black", paddingRight: 30, backgroundColor: colors.PRIMARY_COLOR, }}
 
-        selectedValue={hora}
-        onValueChange={(value) => {setHora(value), console.log("seleccionaste la hora de: ", value)}} 
-     
-       >
+        <Text style={{ paddingLeft: 20, paddingTop: 10, fontWeight: 'bold', textAlign: "center", fontStyle: "italic" }}
+        >Selecciona el numero de sesión de riego</Text>
+        <Text>Puedes fijar hasta 3 diferentes sesiones de riego durante 1 día.</Text>
+        <Picker style={{ fontSize: 16, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 4, color: "black", paddingRight: 30, backgroundColor: colors.PRIMARY_COLOR, width: "80%", marginLeft: "10%", marginLeft: "10%", marginTop: "4%", borderBottomLeftRadius: 20 }}
 
+          selectedValue={numeroHorario}
+          onValueChange={(value) => {
+            setHora(value),
+              console.log("seleccionaste el numero de riego: ", value)
+          }}
+        >
+          <Picker.Item label="Seleccionar numero de horario" />
+          <Picker.Item label="1" value="1" />
+          <Picker.Item label="2" value="2" />
+          <Picker.Item label="3" value="3" />
+
+        </Picker>
+
+        <RayaDebajoWifi></RayaDebajoWifi>
+
+        <Text style={{ paddingLeft: 20, paddingTop: 10, fontWeight: 'bold', textAlign: "center", fontStyle: "italic" }}
+        >Selecciona la hora de Inicio</Text>
+        <Picker style={{ fontSize: 16, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 4, color: "black", paddingRight: 30, backgroundColor: colors.PRIMARY_COLOR, width: "80%", marginLeft: "10%", marginLeft: "10%", marginTop: "4%", borderBottomLeftRadius: 20 }}
+
+          selectedValue={hora}
+          onValueChange={(value) => {
+            setHora(value),
+
+
+
+              console.log("seleccionaste la hora de: ", value)
+
+
+
+          }}
+
+        >
+          <Picker.Item label="Seleccionar hora" />
           <Picker.Item label="00:00" value="0" />
           <Picker.Item label="01:00" value="1" />
           <Picker.Item label="02:00" value="2" />
@@ -198,191 +396,279 @@ const Home = ({ }) => {
           <Picker.Item label="23:00" value="23" />
         </Picker>
 
+        <RayaDebajoWifi></RayaDebajoWifi>
+
+        <Text style={{ paddingLeft: 20, paddingTop: 10, fontWeight: 'bold', textAlign: "center", fontStyle: "italic" }}
+        ><FontAwesome5 style={{ color: '#EDE574', fontSize: 35 }} name={'bell'}></FontAwesome5>  Selecciona el minuto de inicio </Text>
+
+        <Text style={{ padding: 18, fontSize: 12, textAlign: "center" }}> El minuto que selecciones, será el minuto dentro de la hora que seleccionaste en el que se encenderá el sistema </Text>
+        <Picker style={{ fontSize: 16, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 4, color: "black", paddingRight: 30, backgroundColor: colors.PRIMARY_COLOR, width: "80%", marginLeft: "10%", marginLeft: "10%", marginTop: "4%", borderBottomLeftRadius: 20 }}
+
+          selectedValue={minuto}
+          onValueChange={(value) => { setMinuto(value), console.log("seleccionaste el minuto de: ", value) }}
+
+        >
+          <Picker.Item label="Seleccionar el minuto" />
+          <Picker.Item label="00 min" value='0' />
+          <Picker.Item label="05 min" value="1" />
+          <Picker.Item label="10 min" value="2" />
+          <Picker.Item label="15 min" value="3" />
+          <Picker.Item label="20 min" value="4" />
+          <Picker.Item label="25 min" value="5" />
+          <Picker.Item label="30 min" value="6" />
+          <Picker.Item label="35 min" value="7" />
+          <Picker.Item label="40 min" value="8" />
+          <Picker.Item label="45 min" value="9" />
+          <Picker.Item label="50 min" value="10" />
+          <Picker.Item label="55 min" value="11" />
+
+        </Picker>
+
+        <RayaDebajoWifi></RayaDebajoWifi>
+
+        <Text style={{ paddingLeft: 20, paddingTop: 10, fontWeight: 'bold', textAlign: "center", fontStyle: "italic" }}
+        ><FontAwesome5 style={{ color: colors.PRIMARY_COLOR_DARK, fontSize: 35 }} name={'clock'}></FontAwesome5> Selecciona el tiempo de duración</Text>
+        <Picker style={{ fontSize: 16, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 4, color: "black", paddingRight: 30, backgroundColor: colors.PRIMARY_COLOR, width: "80%", marginLeft: "10%", marginLeft: "10%", marginTop: "4%", borderBottomLeftRadius: 20 }}
+
+          selectedValue={minutosDuracion}
+          onValueChange={(value) => { setMinutosDuracion(value), console.log("seleccionaste los minutos de duracion: ", value) }}
+
+        >
+          <Picker.Item label="Seleccionar la duracion" />
+          <Picker.Item label="5 min" value="5" />
+          <Picker.Item label="10 min" value="10" />
+          <Picker.Item label="15 min" value="15" />
+          <Picker.Item label="20 min" value="20" />
+          <Picker.Item label="25 min" value="25" />
+          <Picker.Item label="30 min" value="30" />
+          <Picker.Item label="35 min" value="35" />
+          <Picker.Item label="40 min" value="40" />
+          <Picker.Item label="45 min" value="45" />
+          <Picker.Item label="50 min" value="50" />
+          <Picker.Item label="55 min" value="55" />
+          <Picker.Item label="1 hora" value="60" />
+          <Picker.Item label="1:05 hrs" value="65" />
+          <Picker.Item label="1:10 hrs" value="70" />
+          <Picker.Item label="1:15 hrs" value="75" />
+          <Picker.Item label="1:20 hrs" value="80" />
+          <Picker.Item label="1:25 hrs" value="85" />
+          <Picker.Item label="1:30 hrs" value="90" />
+          <Picker.Item label="1:35 hrs" value="95" />
+          <Picker.Item label="1:40 hrs" value="100" />
+          <Picker.Item label="1:45 hrs" value="105" />
+          <Picker.Item label="1:50 hrs" value="110" />
+          <Picker.Item label="1:55 hrs" value="115" />
+          <Picker.Item label="2 hrs" value="120" />
+        </Picker>
       </View>
 
-      <View style={{ paddingBottom: 25 }}>
+      <RayaDebajoWifi></RayaDebajoWifi>
+
+      <View style={{ paddingBottom: "5%" }}>
         <Text style={{ paddingLeft: 20, paddingTop: 10, fontWeight: 'bold' }}
         >Selecciona los días</Text>
-        <View style={{ flexDirection: 'row', paddingLeft: 10, paddingRight: 1, }}>
-          <CheckBox
+        <View>
 
+          <View style={{ flexDirection: "row" }}>
+            <CheckBox
+              containerStyle={
+                {
+                  color: colors.PRIMARY_COLOR_DARK,
+                  width: 100,
+                  borderRadius: 60
+                }
 
-            containerStyle={
-              {
-                color: colors.PRIMARY_COLOR_DARK,
-                width: 100,
-                borderRadius: 60
               }
+              textStyle={{
+                color: colors2.BLUE,
+                fontSize: 13
+              }}
+              title='Lunes'
+              checked={lunes}
+              checkedColor={colors2.BLUE}
+              center
+              checkedIcon='dot-circle-o'
+              uncheckedIcon='circle-o'
+              onPress={() => setLunes(!lunes)}
+            >
 
-            }
-            textStyle={{
-              color: colors2.BLUE,
-              fontSize: 13
-            }}
-            title='Lunes'
-            checked={lunes}
-            checkedColor={colors2.BLUE}
+            </CheckBox>
+            <CheckBox
+              containerStyle={
+                {
+                  color: colors.PRIMARY_COLOR_DARK,
+                  width: 100,
+                  borderRadius: 60
+                }
 
-
-            onPress={() => setLunes(!lunes)}
-          >
-
-          </CheckBox>
-          <CheckBox
-            containerStyle={
-              {
-                color: colors.PRIMARY_COLOR_DARK,
-                width: 100,
-                borderRadius: 60
               }
+              textStyle={{
+                color: colors2.BLUE,
+                fontSize: 13
+              }}
+              title='Martes'
+              checkedColor={colors2.BLUE}
+              center
+              checkedIcon='dot-circle-o'
+              uncheckedIcon='circle-o'
+              checked={martes}
+              onPress={() => { setMartes(!martes) }}
 
-            }
-            textStyle={{
-              color: colors2.BLUE,
-              fontSize: 13
-            }}
-            title='Martes'
-            checkedColor={colors2.BLUE}
+            >
 
-            checked={martes}
-            onPress={() => setMartes(!martes)}
+            </CheckBox>
 
-          >
+            <CheckBox
+              containerStyle={
+                {
+                  color: colors.PRIMARY_COLOR_DARK,
+                  width: 115,
+                  borderRadius: 60
+                }
 
-          </CheckBox>
+              }
+              textStyle={{
+                color: colors2.BLUE,
+                fontSize: 13
+              }}
+              title='Miercoles'
+              checkedColor={colors2.BLUE}
+              center
+              checkedIcon='dot-circle-o'
+              uncheckedIcon='circle-o'
+              checked={miercoles}
+              onPress={() => setMiercoles(!miercoles)}
+            >
+
+            </CheckBox>
+          </View>
+          <View style={{ flexDirection: "row" }}>
+            <CheckBox
+              containerStyle={
+                {
+                  color: colors.PRIMARY_COLOR_DARK,
+                  width: 100,
+                  borderRadius: 60
+                }
+
+              }
+              textStyle={{
+                color: colors2.BLUE,
+                fontSize: 13
+              }}
+              title='Jueves'
+              checked={jueves}
+              checkedColor={colors2.BLUE}
+              center
+              checkedIcon='dot-circle-o'
+              uncheckedIcon='circle-o'
+              onPress={() => setJueves(!jueves)}
+            >
+
+            </CheckBox>
+            <CheckBox
+              containerStyle={
+                {
+                  color: colors.PRIMARY_COLOR_DARK,
+                  width: 100,
+                  borderRadius: 60
+                }
+
+              }
+              textStyle={{
+                color: colors2.BLUE,
+                fontSize: 13
+              }}
+              title='Viernes'
+              checkedColor={colors2.BLUE}
+              center
+              checkedIcon='dot-circle-o'
+              uncheckedIcon='circle-o'
+              checked={viernes}
+              onPress={() => setViernes(!viernes)}
+
+            >
+
+
+            </CheckBox>
+
+            <CheckBox
+              containerStyle={
+                {
+                  color: colors.PRIMARY_COLOR_DARK,
+                  width: 115,
+                  borderRadius: 60
+                }
+
+              }
+              textStyle={{
+                color: colors2.BLUE,
+                fontSize: 13
+              }}
+              title='Sabado'
+              checkedColor={colors2.BLUE}
+              center
+              checkedIcon='dot-circle-o'
+              uncheckedIcon='circle-o'
+              checked={sabado}
+              onPress={() => setSabado(!sabado)}
+            >
+
+            </CheckBox>
+
+
+          </View>
+
+
+
+
+
+
+          <View style={{ flexDirection: "row", paddingBottom: 10 }}>
+
+
+
+            <CheckBox
+              containerStyle={
+                {
+
+                  color: colors.PRIMARY_COLOR_DARK,
+                  width: 115,
+                  borderRadius: 60,
+
+                }
+
+              }
+              textStyle={{
+
+                color: colors2.BLUE,
+                fontSize: 13
+              }}
+
+              title='Domingo'
+              checkedColor={colors2.BLUE}
+              center
+              checkedIcon='dot-circle-o'
+              uncheckedIcon='circle-o'
+              checked={domingo}
+              onPress={() => setDomingo(!domingo)}
+
+
+            >
+
+            </CheckBox>
+          </View>
 
         </View>
-        <View style={{ flexDirection: 'row', paddingLeft: 10, paddingRight: 1, }}>
-          <CheckBox
-            containerStyle={
-              {
-                color: colors.PRIMARY_COLOR_DARK,
-                width: 115,
-                borderRadius: 60
-              }
 
-            }
-            textStyle={{
-              color: colors2.BLUE,
-              fontSize: 13
-            }}
-            title='Miercoles'
-            checkedColor={colors2.BLUE}
+        {/* 
+      <Text>Dispositivos Bluetooth disponibles:</Text>
+      {devices.map(device => (
+        <Text key={device.id}>{device.name}</Text>
+      ))}
+ */}
 
-            checked={miercoles}
-            onPress={() => setMiercoles(!miercoles)}
-          >
-
-          </CheckBox>
-
-          <CheckBox
-            containerStyle={
-              {
-                color: colors.PRIMARY_COLOR_DARK,
-                width: 115,
-                borderRadius: 60
-              }
-
-            }
-            textStyle={{
-              color: colors2.BLUE,
-              fontSize: 13
-            }}
-            title='Jueves'
-            checkedColor={colors2.BLUE}
-
-            checked={jueves}
-            onPress={() => setJueves(!jueves)}
-          >
-
-          </CheckBox>
-
-
-
-
-
-
-
-        </View>
-        <View style={{ flexDirection: 'row', paddingLeft: 10, paddingRight: 1, }}>
-          <CheckBox
-            containerStyle={
-              {
-                color: colors.PRIMARY_COLOR_DARK,
-                width: 115,
-                borderRadius: 60
-              }
-
-            }
-            textStyle={{
-              color: colors2.BLUE,
-              fontSize: 13
-            }}
-            title='Viernes'
-            checkedColor={colors2.BLUE}
-
-            checked={viernes}
-            onPress={() => setViernes(!viernes)}
-          >
-
-          </CheckBox>
-          <CheckBox
-            containerStyle={
-              {
-                color: colors.PRIMARY_COLOR_DARK,
-                width: 115,
-                borderRadius: 60
-              }
-
-            }
-            textStyle={{
-              color: colors2.BLUE,
-              fontSize: 13
-            }}
-            title='Sabado'
-
-            checkedColor={colors2.BLUE}
-
-            checked={sabado}
-            onPress={() => setSabado(!sabado)}
-
-          >
-
-          </CheckBox>
-
-
-        </View>
-        <View style={{ flexDirection: 'row', paddingLeft: 10, paddingRight: 1, }}>
-          <CheckBox
-            containerStyle={
-              {
-                color: colors.PRIMARY_COLOR_DARK,
-                width: 115,
-                borderRadius: 60,
-
-              }
-
-            }
-            textStyle={{
-              color: colors2.BLUE,
-              fontSize: 13
-            }}
-            title='Domingo'
-            checkedColor={colors2.BLUE}
-
-            checked={domingo}
-            onPress={() => setDomingo(!domingo)}
-
-
-          >
-
-          </CheckBox>
-        </View>
-
-      </View>
-      <View>
-
-        <TouchableOpacity onPress={(onSubmit)} style={{ paddingTop: 10, paddingLeft: 20, paddingRight: 20, }}>
+        <TouchableOpacity onPress={(onSubmit)} style={{ paddingLeft: "12%", paddingRight: "12%" }}>
           <Text style={{
             fontSize: 30, textAlign: "center", width: 250,
             backgroundColor: colors2.BLUE,
@@ -398,12 +684,7 @@ const Home = ({ }) => {
         <Toast></Toast>
       </View>
 
-      {/*  <View style={{ paddingTop: 1, padding: 20 }}>
-        <Text style={{ fontSize: 10, textAlign: "center" }}>Al presionar el boton de Aceptar, se configura que el sistema de riego se preda automaticamente en la hora y los dias seleccionados</Text>
 
-
-        
-      </View> */}
 
 
     </ScrollView >
@@ -416,6 +697,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.BLUE_COLOR,
     borderRadius: 12,
     marginTop: '0%'
+
   },
 
   safeArea: {

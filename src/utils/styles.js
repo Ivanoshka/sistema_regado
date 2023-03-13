@@ -23,29 +23,34 @@ const loginStyles = StyleSheet.create({
     },
 
     logo: {
-        paddingTop: 50,
+        paddingTop: "0%",
         alignItems: 'center',
     },
 
     btnMain: {
-        width: 250,
+        width: "90%",
+        height:"10%",
         marginTop:0,
-        marginBottom: 3,
+        marginBottom: "1%",
         backgroundColor: colors2.BLUE,
         borderRadius: 60,
-        marginLeft: 15,
-        marginRight:15,
-        marginBottom: 5
+        marginLeft: "5%",
+        marginRight:"5%",
+        marginBottom: "3%",
+        textAlign: 'center',
+        paddingTop:"1%"
     },
 
     btnTransparent: {
         backgroundColor: 'rgba(52, 52, 52, 0)',
         borderColor: colors2.BLUE,
-        width: 250,
+        width: "90%",
         borderWidth: 2,
-        marginBottom: 10,
-        borderRadius: 60,   marginLeft: 15,
-        marginRight:15,
+        marginBottom: "3%",
+        borderRadius: 60,
+        marginLeft: "5%",
+        marginRight:"5%",
+        height:"10%",
         
     },
 
@@ -53,9 +58,9 @@ const loginStyles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 17,
         color: colors.PRIMARY_COLOR,
-        paddingVertical: 2,
-        fontFamily: 'Poppins-Bold',
         
+        fontFamily: 'Poppins-Bold',
+        paddingTop: 5
         
     },
 
